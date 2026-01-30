@@ -1,11 +1,10 @@
-"""Geographic map page using Pydeck."""
+"""Geographic map page using Plotly."""
 
 import streamlit as st
 import pandas as pd
-import pydeck as pdk
+import plotly.express as px
 
 from hr_dashboard.data_manager import enrich_employee_data
-from hr_dashboard.utils.chart_helpers import BU_COLORS
 
 
 def render(data: dict[str, pd.DataFrame]) -> None:
@@ -47,92 +46,68 @@ def render(data: dict[str, pd.DataFrame]) -> None:
 
 
 def render_employee_map(df: pd.DataFrame) -> None:
-    """Render the Pydeck scatter map."""
+    """Render the Plotly scatter map."""
     # Aggregate by location for sizing
+    agg_dict = {"employee_id": "count"}
+    if "base_salary" in df.columns:
+        agg_dict["base_salary"] = "mean"
+
     location_stats = (
         df.groupby(["city", "country", "latitude", "longitude"])
-        .agg(
-            headcount=("employee_id", "count"),
-            avg_salary=("annual_salary", "mean") if "annual_salary" in df.columns else ("employee_id", "count"),
-        )
+        .agg(**{
+            "headcount": ("employee_id", "count"),
+            **({" avg_salary": ("base_salary", "mean")} if "base_salary" in df.columns else {}),
+        })
         .reset_index()
     )
 
-    # Normalize headcount for radius scaling
-    max_count = location_stats["headcount"].max()
-    min_radius = 5000
-    max_radius = 50000
-    location_stats["radius"] = (
-        location_stats["headcount"] / max_count * (max_radius - min_radius) + min_radius
-    )
+    # Rename column if it exists
+    if " avg_salary" in location_stats.columns:
+        location_stats = location_stats.rename(columns={" avg_salary": "avg_salary"})
 
-    # Create tooltip text
+    # Create hover text
     if "avg_salary" in location_stats.columns:
-        location_stats["tooltip_text"] = location_stats.apply(
-            lambda row: f"{row['city']}, {row['country']}\nHeadcount: {row['headcount']}\nAvg Salary: ${row['avg_salary']:,.0f}",
+        location_stats["hover_text"] = location_stats.apply(
+            lambda row: f"<b>{row['city']}, {row['country']}</b><br>"
+                       f"Headcount: {row['headcount']}<br>"
+                       f"Avg Salary: ${row['avg_salary']:,.0f}",
             axis=1,
         )
     else:
-        location_stats["tooltip_text"] = location_stats.apply(
-            lambda row: f"{row['city']}, {row['country']}\nHeadcount: {row['headcount']}",
+        location_stats["hover_text"] = location_stats.apply(
+            lambda row: f"<b>{row['city']}, {row['country']}</b><br>"
+                       f"Headcount: {row['headcount']}",
             axis=1,
         )
 
-    # Calculate center point
-    center_lat = location_stats["latitude"].mean()
-    center_lon = location_stats["longitude"].mean()
-
-    # Create Pydeck layer
-    scatter_layer = pdk.Layer(
-        "ScatterplotLayer",
-        data=location_stats,
-        get_position=["longitude", "latitude"],
-        get_radius="radius",
-        get_fill_color=[31, 119, 180, 180],  # Blue with alpha
-        pickable=True,
-        auto_highlight=True,
-    )
-
-    # Create text layer for city labels
-    text_layer = pdk.Layer(
-        "TextLayer",
-        data=location_stats,
-        get_position=["longitude", "latitude"],
-        get_text="city",
-        get_size=12,
-        get_color=[0, 0, 0, 200],
-        get_angle=0,
-        get_alignment_baseline="'bottom'",
-    )
-
-    # Create view state
-    view_state = pdk.ViewState(
-        latitude=center_lat,
-        longitude=center_lon,
-        zoom=3,
-        pitch=0,
-    )
-
-    # Create tooltip
-    tooltip = {
-        "html": "<b>{tooltip_text}</b>",
-        "style": {
-            "backgroundColor": "steelblue",
-            "color": "white",
-            "padding": "10px",
-            "borderRadius": "5px",
+    # Create Plotly scatter mapbox
+    fig = px.scatter_mapbox(
+        location_stats,
+        lat="latitude",
+        lon="longitude",
+        size="headcount",
+        color="headcount",
+        hover_name="city",
+        hover_data={
+            "country": True,
+            "headcount": True,
+            "latitude": False,
+            "longitude": False,
         },
-    }
-
-    # Create deck
-    deck = pdk.Deck(
-        layers=[scatter_layer, text_layer],
-        initial_view_state=view_state,
-        tooltip=tooltip,
-        map_style="mapbox://styles/mapbox/light-v10",
+        color_continuous_scale="Blues",
+        size_max=30,
+        zoom=2,
+        center={"lat": location_stats["latitude"].mean(), "lon": location_stats["longitude"].mean()},
     )
 
-    st.pydeck_chart(deck, use_container_width=True)
+    # Use OpenStreetMap tiles (no API key required)
+    fig.update_layout(
+        mapbox_style="open-street-map",
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+        height=500,
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def render_location_summary(df: pd.DataFrame) -> None:

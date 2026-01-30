@@ -117,7 +117,7 @@ def render_org_summary_table(enriched_df: pd.DataFrame, data: dict[str, pd.DataF
             enriched_df.groupby("org_id")
             .agg(
                 headcount=("employee_id", "count"),
-                avg_salary=("annual_salary", "mean") if "annual_salary" in enriched_df.columns else ("employee_id", "count"),
+                avg_salary=("base_salary", "mean") if "base_salary" in enriched_df.columns else ("employee_id", "count"),
             )
             .reset_index()
         )
@@ -128,7 +128,7 @@ def render_org_summary_table(enriched_df: pd.DataFrame, data: dict[str, pd.DataF
 
         # Select and order columns
         display_cols = ["org_id", "org_name", "business_unit", "headcount"]
-        if "avg_salary" in org_summary.columns and "annual_salary" in enriched_df.columns:
+        if "avg_salary" in org_summary.columns and "base_salary" in enriched_df.columns:
             org_summary["avg_salary"] = org_summary["avg_salary"].round(0)
             display_cols.append("avg_salary")
 

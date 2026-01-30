@@ -23,7 +23,7 @@ def render_sidebar_filters(data: dict[str, pd.DataFrame]) -> dict[str, Any]:
     filters["n_employees"] = st.sidebar.slider(
         "Employee Count",
         min_value=10,
-        max_value=500,
+        max_value=10000,
         value=st.session_state.get("n_employees", 100),
         step=10,
         help="Number of employees to generate",
@@ -74,8 +74,8 @@ def render_sidebar_filters(data: dict[str, pd.DataFrame]) -> dict[str, Any]:
     # Salary Range filter (if compensation data exists)
     if "employee_compensation" in data:
         comp_df = data["employee_compensation"]
-        min_salary = float(comp_df["annual_salary"].min())
-        max_salary = float(comp_df["annual_salary"].max())
+        min_salary = float(comp_df["base_salary"].min())
+        max_salary = float(comp_df["base_salary"].max())
 
         salary_range = st.sidebar.slider(
             "Salary Range",
@@ -110,10 +110,10 @@ def render_data_summary(data: dict[str, pd.DataFrame]) -> None:
     if "employee_compensation" in data:
         comp_df = data["employee_compensation"]
         # Get current compensation
-        current_comp = comp_df.sort_values("effective_date", ascending=False).drop_duplicates(
+        current_comp = comp_df.sort_values("start_date", ascending=False).drop_duplicates(
             "employee_id", keep="first"
         )
-        avg_salary = current_comp["annual_salary"].mean()
+        avg_salary = current_comp["base_salary"].mean()
         st.sidebar.metric("Avg Salary", f"${avg_salary:,.0f}")
 
     # Gender distribution

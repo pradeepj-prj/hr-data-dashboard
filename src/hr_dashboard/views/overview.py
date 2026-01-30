@@ -63,8 +63,8 @@ def render_kpis(enriched_df: pd.DataFrame, data: dict[str, pd.DataFrame]) -> Non
 
     # Average Salary
     with col2:
-        if "annual_salary" in enriched_df.columns:
-            avg_salary = enriched_df["annual_salary"].mean()
+        if "base_salary" in enriched_df.columns:
+            avg_salary = enriched_df["base_salary"].mean()
             st.metric("Avg Salary", f"${avg_salary:,.0f}")
         else:
             st.metric("Avg Salary", "N/A")

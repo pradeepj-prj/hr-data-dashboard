@@ -60,10 +60,10 @@ def render_compensation_kpis(enriched_df: pd.DataFrame, comp_df: pd.DataFrame) -
     """Render compensation KPI metrics."""
     col1, col2, col3, col4 = st.columns(4)
 
-    if "annual_salary" not in enriched_df.columns:
+    if "base_salary" not in enriched_df.columns:
         return
 
-    salaries = enriched_df["annual_salary"].dropna()
+    salaries = enriched_df["base_salary"].dropna()
 
     with col1:
         st.metric("Median Salary", f"${salaries.median():,.0f}")
@@ -81,24 +81,24 @@ def render_compensation_kpis(enriched_df: pd.DataFrame, comp_df: pd.DataFrame) -
 
 def render_salary_distribution(enriched_df: pd.DataFrame) -> None:
     """Render salary distribution histogram."""
-    if "annual_salary" not in enriched_df.columns:
+    if "base_salary" not in enriched_df.columns:
         st.info("Salary data not available")
         return
 
     fig = create_histogram(
         enriched_df,
-        x="annual_salary",
+        x="base_salary",
         title="Salary Distribution",
         nbins=25,
     )
-    fig.update_layout(xaxis_title="Annual Salary", yaxis_title="Count")
+    fig.update_layout(xaxis_title="Base Salary", yaxis_title="Count")
     fig.update_xaxes(tickformat="$,.0f")
     st.plotly_chart(fig, use_container_width=True)
 
 
 def render_salary_by_seniority(enriched_df: pd.DataFrame) -> None:
     """Render salary box plot by seniority level."""
-    if "annual_salary" not in enriched_df.columns or "seniority_level" not in enriched_df.columns:
+    if "base_salary" not in enriched_df.columns or "seniority_level" not in enriched_df.columns:
         st.info("Salary or seniority data not available")
         return
 
@@ -119,31 +119,31 @@ def render_salary_by_seniority(enriched_df: pd.DataFrame) -> None:
     fig = create_box_plot(
         df,
         x="level_label",
-        y="annual_salary",
+        y="base_salary",
         title="Salary by Seniority Level",
         color="level_label",
         color_discrete_map=label_colors,
     )
-    fig.update_layout(showlegend=False, xaxis_title="Seniority Level", yaxis_title="Annual Salary")
+    fig.update_layout(showlegend=False, xaxis_title="Seniority Level", yaxis_title="Base Salary")
     fig.update_yaxes(tickformat="$,.0f")
     st.plotly_chart(fig, use_container_width=True)
 
 
 def render_salary_by_business_unit(enriched_df: pd.DataFrame) -> None:
     """Render salary box plot by business unit."""
-    if "annual_salary" not in enriched_df.columns or "business_unit" not in enriched_df.columns:
+    if "base_salary" not in enriched_df.columns or "business_unit" not in enriched_df.columns:
         st.info("Salary or business unit data not available")
         return
 
     fig = create_box_plot(
         enriched_df,
         x="business_unit",
-        y="annual_salary",
+        y="base_salary",
         title="Salary by Business Unit",
         color="business_unit",
         color_discrete_map=BU_COLORS,
     )
-    fig.update_layout(showlegend=False, xaxis_title="Business Unit", yaxis_title="Annual Salary")
+    fig.update_layout(showlegend=False, xaxis_title="Business Unit", yaxis_title="Base Salary")
     fig.update_yaxes(tickformat="$,.0f")
     st.plotly_chart(fig, use_container_width=True)
 

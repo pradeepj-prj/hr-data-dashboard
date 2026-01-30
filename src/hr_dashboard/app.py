@@ -8,7 +8,7 @@ from hr_dashboard.filters import (
     render_data_summary,
     render_download_buttons,
 )
-from hr_dashboard.pages import overview, compensation, performance, org_chart, org_network, geography
+from hr_dashboard.views import overview, compensation, performance, org_chart, org_network, geography
 
 
 def main():

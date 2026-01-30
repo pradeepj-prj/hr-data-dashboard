@@ -127,11 +127,11 @@ def get_filtered_data(
     # Filter for salary range using compensation data
     if salary_range and "employee_compensation" in data:
         comp_df = data["employee_compensation"].copy()
-        current_comp = comp_df.sort_values("effective_date", ascending=False).drop_duplicates(
+        current_comp = comp_df.sort_values("start_date", ascending=False).drop_duplicates(
             "employee_id", keep="first"
         )
-        salary_mask = (current_comp["annual_salary"] >= salary_range[0]) & (
-            current_comp["annual_salary"] <= salary_range[1]
+        salary_mask = (current_comp["base_salary"] >= salary_range[0]) & (
+            current_comp["base_salary"] <= salary_range[1]
         )
         valid_emp_ids = current_comp.loc[salary_mask, "employee_id"]
         mask &= employees_enriched["employee_id"].isin(valid_emp_ids)
@@ -219,11 +219,11 @@ def enrich_employee_data(data: dict[str, pd.DataFrame]) -> pd.DataFrame:
     # Add compensation if available
     if "employee_compensation" in data:
         comp_df = data["employee_compensation"]
-        current_comp = comp_df.sort_values("effective_date", ascending=False).drop_duplicates(
+        current_comp = comp_df.sort_values("start_date", ascending=False).drop_duplicates(
             "employee_id", keep="first"
         )
         employees_df = employees_df.merge(
-            current_comp[["employee_id", "annual_salary", "currency"]],
+            current_comp[["employee_id", "base_salary", "currency"]],
             on="employee_id",
             how="left",
         )
