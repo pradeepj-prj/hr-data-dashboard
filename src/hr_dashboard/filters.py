@@ -17,7 +17,7 @@ def render_sidebar_filters(data: dict[str, pd.DataFrame]) -> dict[str, Any]:
     """
     filters = {}
 
-    st.sidebar.header("Filters")
+    st.sidebar.header("Generation Settings")
 
     # Employee count slider (for regeneration)
     filters["n_employees"] = st.sidebar.slider(
@@ -29,6 +29,41 @@ def render_sidebar_filters(data: dict[str, pd.DataFrame]) -> dict[str, Any]:
         help="Number of employees to generate",
     )
 
+    # Years of history slider
+    filters["years_of_history"] = st.sidebar.slider(
+        "Years of History",
+        min_value=1,
+        max_value=20,
+        value=st.session_state.get("years_of_history", 5),
+        help="Number of years of historical data to generate",
+    )
+
+    # Attrition Settings
+    st.sidebar.subheader("Attrition Settings")
+
+    filters["enable_attrition"] = st.sidebar.checkbox(
+        "Enable Attrition",
+        value=st.session_state.get("enable_attrition", True),
+        help="Generate employee termination and attrition data",
+    )
+
+    filters["attrition_rate"] = st.sidebar.slider(
+        "Attrition Rate (%)",
+        min_value=0,
+        max_value=30,
+        value=st.session_state.get("attrition_rate_pct", 12),
+        help="Base annual attrition rate",
+    )
+
+    filters["noise_std"] = st.sidebar.slider(
+        "ML Difficulty (Noise)",
+        min_value=0.0,
+        max_value=0.5,
+        value=st.session_state.get("noise_std", 0.2),
+        step=0.05,
+        help="Low=easy ML (~90%), Medium=realistic (~80%), High=hard (~70%)",
+    )
+
     # Regenerate button
     filters["regenerate"] = st.sidebar.button(
         "Regenerate Data",
@@ -37,6 +72,7 @@ def render_sidebar_filters(data: dict[str, pd.DataFrame]) -> dict[str, Any]:
     )
 
     st.sidebar.divider()
+    st.sidebar.header("View Filters")
 
     # Business Unit filter
     org_units = data["organization_unit"]

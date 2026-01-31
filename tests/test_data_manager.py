@@ -79,11 +79,11 @@ def test_compensation_data():
     comp = data["employee_compensation"]
 
     assert "employee_id" in comp.columns
-    assert "annual_salary" in comp.columns
-    assert "effective_date" in comp.columns
+    assert "base_salary" in comp.columns
+    assert "start_date" in comp.columns
 
     # All salaries should be positive
-    assert (comp["annual_salary"] > 0).all()
+    assert (comp["base_salary"] > 0).all()
 
 
 def test_performance_data():
@@ -93,7 +93,7 @@ def test_performance_data():
 
     assert "employee_id" in perf.columns
     assert "rating" in perf.columns
-    assert "review_year" in perf.columns
+    assert "review_period_year" in perf.columns
 
     # Ratings should be 1-5
     assert perf["rating"].min() >= 1

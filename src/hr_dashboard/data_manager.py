@@ -1,20 +1,35 @@
 """Data generation and caching manager."""
 
+from datetime import date
+
 import streamlit as st
 import pandas as pd
 from hr_data_generator import generate_hr_data
 
 
-def get_hr_data(n_employees: int, seed: int | None = None) -> dict[str, pd.DataFrame]:
+def get_hr_data(
+    n_employees: int,
+    seed: int | None = None,
+    include_attrition: bool = True,
+    attrition_rate: float = 0.12,
+    noise_std: float = 0.2,
+    start_date: date | None = None,
+    end_date: date | None = None,
+) -> dict[str, pd.DataFrame]:
     """
     Generate or retrieve cached HR data.
 
     Uses Streamlit session state to cache generated data.
-    Data is only regenerated when n_employees changes or explicitly requested.
+    Data is only regenerated when parameters change or explicitly requested.
 
     Args:
         n_employees: Number of employees to generate
         seed: Random seed for reproducibility
+        include_attrition: Whether to generate attrition data
+        attrition_rate: Base annual attrition rate (0.0-0.3)
+        noise_std: ML difficulty noise level (0.0-0.5)
+        start_date: Start date for historical data generation
+        end_date: End date for historical data generation
 
     Returns:
         Dictionary of DataFrames from hr_data_generator
@@ -22,44 +37,95 @@ def get_hr_data(n_employees: int, seed: int | None = None) -> dict[str, pd.DataF
     cache_key = "hr_data"
     count_key = "hr_data_n_employees"
     seed_key = "hr_data_seed"
+    attrition_key = "hr_data_include_attrition"
+    attrition_rate_key = "hr_data_attrition_rate"
+    noise_key = "hr_data_noise_std"
+    start_date_key = "hr_data_start_date"
+    end_date_key = "hr_data_end_date"
 
     # Check if we need to regenerate
     needs_regeneration = (
         cache_key not in st.session_state
         or st.session_state.get(count_key) != n_employees
         or st.session_state.get(seed_key) != seed
+        or st.session_state.get(attrition_key) != include_attrition
+        or st.session_state.get(attrition_rate_key) != attrition_rate
+        or st.session_state.get(noise_key) != noise_std
+        or st.session_state.get(start_date_key) != start_date
+        or st.session_state.get(end_date_key) != end_date
     )
 
     if needs_regeneration:
         with st.spinner(f"Generating data for {n_employees} employees..."):
-            data = generate_hr_data(n_employees=n_employees, seed=seed)
+            data = generate_hr_data(
+                n_employees=n_employees,
+                seed=seed,
+                include_attrition=include_attrition,
+                attrition_rate=attrition_rate,
+                noise_std=noise_std,
+                start_date=start_date,
+                end_date=end_date,
+            )
             st.session_state[cache_key] = data
             st.session_state[count_key] = n_employees
             st.session_state[seed_key] = seed
+            st.session_state[attrition_key] = include_attrition
+            st.session_state[attrition_rate_key] = attrition_rate
+            st.session_state[noise_key] = noise_std
+            st.session_state[start_date_key] = start_date
+            st.session_state[end_date_key] = end_date
 
     return st.session_state[cache_key]
 
 
-def force_regenerate(n_employees: int, seed: int | None = None) -> dict[str, pd.DataFrame]:
+def force_regenerate(
+    n_employees: int,
+    seed: int | None = None,
+    include_attrition: bool = True,
+    attrition_rate: float = 0.12,
+    noise_std: float = 0.2,
+    start_date: date | None = None,
+    end_date: date | None = None,
+) -> dict[str, pd.DataFrame]:
     """
     Force regeneration of HR data with a new seed.
 
     Args:
         n_employees: Number of employees to generate
         seed: Random seed (if None, generates random data)
+        include_attrition: Whether to generate attrition data
+        attrition_rate: Base annual attrition rate (0.0-0.3)
+        noise_std: ML difficulty noise level (0.0-0.5)
+        start_date: Start date for historical data generation
+        end_date: End date for historical data generation
 
     Returns:
         Dictionary of DataFrames from hr_data_generator
     """
     # Clear cache to force regeneration
-    if "hr_data" in st.session_state:
-        del st.session_state["hr_data"]
-    if "hr_data_n_employees" in st.session_state:
-        del st.session_state["hr_data_n_employees"]
-    if "hr_data_seed" in st.session_state:
-        del st.session_state["hr_data_seed"]
+    keys_to_clear = [
+        "hr_data",
+        "hr_data_n_employees",
+        "hr_data_seed",
+        "hr_data_include_attrition",
+        "hr_data_attrition_rate",
+        "hr_data_noise_std",
+        "hr_data_start_date",
+        "hr_data_end_date",
+    ]
+    for key in keys_to_clear:
+        if key in st.session_state:
+            del st.session_state[key]
 
-    return get_hr_data(n_employees, seed)
+    return get_hr_data(
+        n_employees,
+        seed,
+        include_attrition=include_attrition,
+        attrition_rate=attrition_rate,
+        noise_std=noise_std,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
 
 def get_filtered_data(
@@ -119,7 +185,11 @@ def get_filtered_data(
     mask = pd.Series([True] * len(employees_enriched), index=employees_enriched.index)
 
     if business_units:
-        mask &= employees_enriched["business_unit"].isin(business_units)
+        # Include employees with NULL business_unit OR matching business_unit
+        mask &= (
+            employees_enriched["business_unit"].isin(business_units)
+            | employees_enriched["business_unit"].isna()
+        )
 
     if seniority_levels:
         mask &= employees_enriched["seniority_level"].isin(seniority_levels)

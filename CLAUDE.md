@@ -40,7 +40,7 @@ Main dependencies: streamlit, pandas, numpy, plotly, networkx, pyvis, pydeck
 |  SIDEBAR              |  MAIN CONTENT (Tabs)                      |
 |  ------------------   |  ---------------------------------------- |
 |  Employee Count: 100  |  [Overview | Organization | Compensation |
-|  [======|----] slider |   Performance | Map]                      |
+|  [======|----] slider |   Performance | Attrition | Map]          |
 |                       |                                           |
 |  Business Unit:       |  Tab content varies by selection          |
 |  [x] Engineering      |                                           |
@@ -48,7 +48,8 @@ Main dependencies: streamlit, pandas, numpy, plotly, networkx, pyvis, pydeck
 |  [x] Corporate        |  Organization: Treemap + Network tabs     |
 |                       |  Compensation: Salary charts, box plots   |
 |  Seniority Level:     |  Performance: Ratings, trends, heatmaps   |
-|  [x] 1-Entry          |  Map: Pydeck scatter + location summary   |
+|  [x] 1-Entry          |  Attrition: Turnover analysis, ML insights|
+|                       |  Map: Pydeck scatter + location summary   |
 |  [x] 2-Junior         |                                           |
 |  [x] 3-Mid            |  ------------------------------------------
 |  [x] 4-Senior         |  Data Summary section (in sidebar)        |
@@ -56,6 +57,11 @@ Main dependencies: streamlit, pandas, numpy, plotly, networkx, pyvis, pydeck
 |                       |                                           |
 |  Salary Range:        |                                           |
 |  [======|----] slider |                                           |
+|                       |                                           |
+|  ATTRITION SETTINGS   |                                           |
+|  [x] Enable Attrition |                                           |
+|  Rate: 12%            |                                           |
+|  ML Noise: 0.2        |                                           |
 +------------------------------------------------------------------+
 ```
 
@@ -94,8 +100,8 @@ src/hr_dashboard/
 ### Key Modules
 
 #### data_manager.py
-- `get_hr_data(n_employees, seed)` - Generate or retrieve cached data
-- `force_regenerate(n_employees, seed)` - Force new data generation
+- `get_hr_data(n_employees, seed, include_attrition, attrition_rate, noise_std)` - Generate or retrieve cached data
+- `force_regenerate(n_employees, seed, include_attrition, attrition_rate, noise_std)` - Force new data generation
 - `get_filtered_data(data, filters)` - Apply sidebar filters
 - `enrich_employee_data(data)` - Join employee with job, org, location, compensation
 
@@ -108,11 +114,11 @@ src/hr_dashboard/
 
 | Table | Description | Key Columns |
 |-------|-------------|-------------|
-| employee | Hub table, one row per person | employee_id, first_name, last_name, gender, hire_date, location_id, employment_type, manager_id |
+| employee | Hub table, one row per person | employee_id, first_name, last_name, gender, hire_date, location_id, employment_type, employment_status, termination_date, termination_reason, manager_id |
 | employee_job_assignment | Time-variant job history | employee_id, job_id, start_date, end_date |
 | employee_org_assignment | Time-variant org placement | employee_id, org_id, start_date, end_date |
-| employee_compensation | Time-variant salary records | employee_id, annual_salary, currency, effective_date, change_reason |
-| employee_performance | Annual performance ratings | employee_id, review_year, rating (1-5) |
+| employee_compensation | Time-variant salary records | employee_id, base_salary, currency, start_date, end_date, change_reason |
+| employee_performance | Annual performance ratings | employee_id, review_period_year, rating (1-5), rating_label |
 | job_role | Reference: job catalog | job_id, job_title, job_family, job_level, seniority_level (1-5) |
 | organization_unit | Reference: org hierarchy | org_id, org_name, parent_org_id, business_unit |
 | location | Reference: office locations | location_id, city, country, region, latitude, longitude |
@@ -122,10 +128,13 @@ src/hr_dashboard/
 #### Sidebar Filters (user-adjustable at runtime)
 | Filter | Type | Range/Options | Default |
 |--------|------|---------------|---------|
-| Employee Count | Slider | 10-500, step 10 | 100 |
+| Employee Count | Slider | 10-10000, step 10 | 100 |
 | Business Unit | Multi-select | Engineering, Sales, Corporate | All selected |
 | Seniority Level | Multi-select | 1-Entry, 2-Junior, 3-Mid, 4-Senior, 5-Executive | All selected |
 | Salary Range | Range slider | min-max from data | Full range |
+| Enable Attrition | Checkbox | On/Off | On |
+| Attrition Rate | Slider | 0-30% | 12% |
+| ML Difficulty (Noise) | Slider | 0.0-0.5, step 0.05 | 0.2 |
 
 #### Chart Color Schemes (in utils/chart_helpers.py)
 ```python
@@ -147,6 +156,23 @@ GENDER_COLORS = {
     "male": "#1f77b4",
     "female": "#e377c2",
     "na": "#7f7f7f",
+}
+
+ATTRITION_COLORS = {
+    "Active": "#2ca02c",      # Green
+    "Terminated": "#d62728",  # Red
+    "Retired": "#ff7f0e",     # Orange
+}
+
+TERMINATION_REASON_COLORS = {
+    "Resignation - Career Opportunity": "#1f77b4",
+    "Resignation - Personal Reasons": "#aec7e8",
+    "Resignation - Relocation": "#ffbb78",
+    "Retirement": "#ff7f0e",
+    "Termination - Performance": "#d62728",
+    "Termination - Policy Violation": "#ff9896",
+    "Layoff - Restructuring": "#9467bd",
+    "Layoff - Cost Reduction": "#c5b0d5",
 }
 ```
 
@@ -184,11 +210,36 @@ GENDER_COLORS = {
 - Stacked bar: ratings by year
 - Heatmap: Business Unit × Year
 
+#### Attrition (attrition.py)
+- KPIs: Attrition Rate %, Active/Terminated/Retired counts, Voluntary vs Involuntary %
+- Termination reasons pie chart
+- Attrition rate by business unit bar chart
+- Attrition rate by performance rating bar chart (ML insight)
+- Attrition rate by tenure bucket bar chart
+- Attrition rate by seniority level bar chart
+- Attrition timeline line chart
+
 #### Geography (geography.py)
 - Pydeck scatter map with circles sized by headcount
 - Tooltip with city, country, headcount, avg salary
 - Summary tables by country and top cities
 - Unique locations and countries metrics
+
+## Before Making Changes
+
+### Breaking Change Checklist
+1. **Function signatures**: Do changed functions have default values for new params?
+2. **Tests**: Do existing tests still pass? Are column names correct?
+3. **Imports**: Are new imports available in the environment?
+4. **Session state**: Will cache invalidation cause unexpected data regeneration?
+
+### Quick Validation
+Run `/validate` skill to check tests before committing:
+```bash
+cd /Users/I774404/hr-data-dashboard
+source .venv/bin/activate
+pytest tests/ -v
+```
 
 ## Running Tests
 

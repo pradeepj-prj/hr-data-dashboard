@@ -34,6 +34,23 @@ GENDER_COLORS = {
     "na": "#7f7f7f",
 }
 
+ATTRITION_COLORS = {
+    "Active": "#2ca02c",      # Green
+    "Terminated": "#d62728",  # Red
+    "Retired": "#ff7f0e",     # Orange
+}
+
+TERMINATION_REASON_COLORS = {
+    "Resignation - Career Opportunity": "#1f77b4",
+    "Resignation - Personal Reasons": "#aec7e8",
+    "Resignation - Relocation": "#ffbb78",
+    "Retirement": "#ff7f0e",
+    "Termination - Performance": "#d62728",
+    "Termination - Policy Violation": "#ff9896",
+    "Layoff - Restructuring": "#9467bd",
+    "Layoff - Cost Reduction": "#c5b0d5",
+}
+
 
 def format_currency(value: float) -> str:
     """Format value as currency."""
