@@ -106,6 +106,7 @@ def main():
         business_units=filters["business_units"],
         seniority_levels=filters["seniority_levels"],
         salary_range=filters["salary_range"],
+        countries=filters["countries"],
     )
 
     # Render data summary

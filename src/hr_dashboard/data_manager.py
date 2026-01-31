@@ -134,6 +134,7 @@ def get_filtered_data(
     seniority_levels: list[int] | None = None,
     date_range: tuple[pd.Timestamp, pd.Timestamp] | None = None,
     salary_range: tuple[float, float] | None = None,
+    countries: list[str] | None = None,
 ) -> dict[str, pd.DataFrame]:
     """
     Apply filters to HR data.
@@ -144,6 +145,7 @@ def get_filtered_data(
         seniority_levels: Filter by seniority levels (1-5)
         date_range: Filter by date range (start, end)
         salary_range: Filter by salary range (min, max)
+        countries: Filter by countries (e.g., ["Australia", "Japan"])
 
     Returns:
         Filtered dictionary of DataFrames
@@ -156,6 +158,7 @@ def get_filtered_data(
     org_assignments = data["employee_org_assignment"].copy()
     job_roles = data["job_role"]
     org_units = data["organization_unit"]
+    locations = data["location"]
 
     # Get current job assignments (most recent)
     current_jobs = job_assignments.sort_values("start_date", ascending=False).drop_duplicates(
@@ -180,6 +183,9 @@ def get_filtered_data(
     employees_enriched = employees_enriched.merge(
         org_units[["org_id", "business_unit"]], on="org_id", how="left"
     )
+    employees_enriched = employees_enriched.merge(
+        locations[["location_id", "country"]], on="location_id", how="left"
+    )
 
     # Apply filters
     mask = pd.Series([True] * len(employees_enriched), index=employees_enriched.index)
@@ -193,6 +199,9 @@ def get_filtered_data(
 
     if seniority_levels:
         mask &= employees_enriched["seniority_level"].isin(seniority_levels)
+
+    if countries:
+        mask &= employees_enriched["country"].isin(countries)
 
     # Filter for salary range using compensation data
     if salary_range and "employee_compensation" in data:

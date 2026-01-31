@@ -84,6 +84,16 @@ def render_sidebar_filters(data: dict[str, pd.DataFrame]) -> dict[str, Any]:
         help="Filter by business unit",
     )
 
+    # Country filter
+    locations = data["location"]
+    countries = sorted(locations["country"].dropna().unique().tolist())
+    filters["countries"] = st.sidebar.multiselect(
+        "Country",
+        options=countries,
+        default=countries,
+        help="Filter by country",
+    )
+
     # Seniority Level filter
     job_roles = data["job_role"]
     seniority_levels = sorted(job_roles["seniority_level"].dropna().unique().tolist())
