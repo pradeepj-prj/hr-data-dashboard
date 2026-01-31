@@ -5,51 +5,57 @@ import plotly.graph_objects as go
 import pandas as pd
 
 
-# Color palette for consistent theming
+# SAP Fiori-inspired color palette (Horizon Theme)
 COLORS = {
-    "primary": "#1f77b4",
-    "secondary": "#ff7f0e",
-    "success": "#2ca02c",
-    "warning": "#d62728",
-    "info": "#9467bd",
+    "primary": "#0A6ED1",      # SAP Blue
+    "secondary": "#E9730C",    # SAP Gold/Accent
+    "success": "#107E3E",      # SAP Green
+    "warning": "#DF6E0C",      # SAP Orange
+    "error": "#BB0000",        # SAP Red
+    "info": "#0A6ED1",         # SAP Blue
 }
 
 BU_COLORS = {
-    "Engineering": "#1f77b4",
-    "Sales": "#ff7f0e",
-    "Corporate": "#2ca02c",
+    "Engineering": "#0A6ED1",  # SAP Blue
+    "Sales": "#E9730C",        # SAP Gold
+    "Corporate": "#107E3E",    # SAP Green
 }
 
 SENIORITY_COLORS = {
-    1: "#c7e9c0",  # Entry - light green
-    2: "#74c476",  # Junior - medium green
-    3: "#31a354",  # Mid - green
-    4: "#006d2c",  # Senior - dark green
-    5: "#00441b",  # Executive - darkest green
+    1: "#BDD6F2",  # Lightest blue
+    2: "#89B8E6",  # Light blue
+    3: "#5599D9",  # Medium blue
+    4: "#0A6ED1",  # SAP Blue
+    5: "#085294",  # Dark blue
 }
 
 GENDER_COLORS = {
-    "male": "#1f77b4",
-    "female": "#e377c2",
-    "na": "#7f7f7f",
+    "male": "#0A6ED1",    # SAP Blue
+    "female": "#E9730C",  # SAP Gold
+    "na": "#6A6D70",      # Neutral gray
 }
 
 ATTRITION_COLORS = {
-    "Active": "#2ca02c",      # Green
-    "Terminated": "#d62728",  # Red
-    "Retired": "#ff7f0e",     # Orange
+    "Active": "#107E3E",      # SAP Green
+    "Terminated": "#BB0000",  # SAP Red
+    "Retired": "#DF6E0C",     # SAP Orange
 }
 
 TERMINATION_REASON_COLORS = {
-    "Resignation - Career Opportunity": "#1f77b4",
-    "Resignation - Personal Reasons": "#aec7e8",
-    "Resignation - Relocation": "#ffbb78",
-    "Retirement": "#ff7f0e",
-    "Termination - Performance": "#d62728",
-    "Termination - Policy Violation": "#ff9896",
-    "Layoff - Restructuring": "#9467bd",
-    "Layoff - Cost Reduction": "#c5b0d5",
+    "Resignation - Career Opportunity": "#0A6ED1",
+    "Resignation - Personal Reasons": "#5599D9",
+    "Resignation - Relocation": "#89B8E6",
+    "Retirement": "#DF6E0C",
+    "Termination - Performance": "#BB0000",
+    "Termination - Policy Violation": "#E34D4D",
+    "Layoff - Restructuring": "#6A6D70",
+    "Layoff - Cost Reduction": "#8D9094",
 }
+
+# SAP Fiori chart styling defaults
+CHART_BGCOLOR = "#FFFFFF"
+CHART_PAPER_BGCOLOR = "#FFFFFF"
+CHART_FONT_COLOR = "#32363A"
 
 
 def format_currency(value: float) -> str:
@@ -110,7 +116,9 @@ def create_bar_chart(
     )
     fig.update_layout(
         showlegend=color is not None,
-        plot_bgcolor="white",
+        plot_bgcolor=CHART_BGCOLOR,
+        paper_bgcolor=CHART_PAPER_BGCOLOR,
+        font=dict(color=CHART_FONT_COLOR),
         margin=dict(l=40, r=40, t=60, b=40),
     )
     return fig
@@ -148,7 +156,11 @@ def create_pie_chart(
         hole=hole,
     )
     fig.update_traces(textposition="inside", textinfo="percent+label")
-    fig.update_layout(margin=dict(l=40, r=40, t=60, b=40))
+    fig.update_layout(
+        paper_bgcolor=CHART_PAPER_BGCOLOR,
+        font=dict(color=CHART_FONT_COLOR),
+        margin=dict(l=40, r=40, t=60, b=40),
+    )
     return fig
 
 
@@ -180,7 +192,9 @@ def create_histogram(
         color=color,
     )
     fig.update_layout(
-        plot_bgcolor="white",
+        plot_bgcolor=CHART_BGCOLOR,
+        paper_bgcolor=CHART_PAPER_BGCOLOR,
+        font=dict(color=CHART_FONT_COLOR),
         margin=dict(l=40, r=40, t=60, b=40),
         bargap=0.1,
     )
@@ -218,7 +232,9 @@ def create_box_plot(
         color_discrete_map=color_discrete_map,
     )
     fig.update_layout(
-        plot_bgcolor="white",
+        plot_bgcolor=CHART_BGCOLOR,
+        paper_bgcolor=CHART_PAPER_BGCOLOR,
+        font=dict(color=CHART_FONT_COLOR),
         margin=dict(l=40, r=40, t=60, b=40),
     )
     return fig
@@ -255,7 +271,11 @@ def create_heatmap(
         color_continuous_scale=color_scale,
         aspect="auto",
     )
-    fig.update_layout(margin=dict(l=40, r=40, t=60, b=40))
+    fig.update_layout(
+        paper_bgcolor=CHART_PAPER_BGCOLOR,
+        font=dict(color=CHART_FONT_COLOR),
+        margin=dict(l=40, r=40, t=60, b=40),
+    )
     return fig
 
 
@@ -290,7 +310,9 @@ def create_line_chart(
         markers=markers,
     )
     fig.update_layout(
-        plot_bgcolor="white",
+        plot_bgcolor=CHART_BGCOLOR,
+        paper_bgcolor=CHART_PAPER_BGCOLOR,
+        font=dict(color=CHART_FONT_COLOR),
         margin=dict(l=40, r=40, t=60, b=40),
     )
     return fig
