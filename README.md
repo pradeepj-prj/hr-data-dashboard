@@ -8,7 +8,14 @@ Interactive Streamlit dashboard for exploring and visualizing synthetic HR data 
 - **Organization Views**: Interactive treemap and network graph showing manager hierarchy
 - **Compensation Analytics**: Salary distribution, box plots by seniority/business unit, change reason breakdown
 - **Performance Analytics**: Rating distribution, trends over time, heatmaps by business unit
+- **Attrition Analytics**: Turnover metrics, attrition by department/tenure/performance, ML feature importance for predicting employee churn
 - **Geographic Map**: Interactive Pydeck map showing employee distribution by location
+
+### Sidebar Controls
+
+- **Generation Settings**: Configure employee count (10-10,000), years of history (1-20), attrition rate, and ML difficulty noise
+- **View Filters**: Filter dashboard by business unit, country, seniority level, and salary range
+- **Data Export**: Download all tables as CSV files
 
 ## Installation
 
@@ -20,7 +27,7 @@ Interactive Streamlit dashboard for exploring and visualizing synthetic HR data 
 
 1. Clone this repository:
 ```bash
-git clone <repo-url>
+git clone https://github.com/pradeepj-prj/hr-data-dashboard.git
 cd hr-data-dashboard
 ```
 
@@ -53,37 +60,52 @@ The dashboard will open in your browser at `http://localhost:8501`.
 ## Dashboard Layout
 
 ```
-+------------------------------------------------------------------+
-|  HR Data Dashboard                          [Regenerate Data] btn |
-+------------------------------------------------------------------+
-|  SIDEBAR              |  MAIN CONTENT (Tabs)                      |
-|  ------------------   |  ---------------------------------------- |
-|  Employee Count: 100  |  [Overview | Organization | Compensation |
-|  [======|----] slider |   Performance | Map]                      |
-|                       |                                           |
-|  Business Unit:       |  [Tab Content Area]                       |
-|  [x] Engineering      |                                           |
-|  [x] Sales            |                                           |
-|  [x] Corporate        |                                           |
-|                       |                                           |
-|  Seniority Level:     |                                           |
-|  [x] 1-Entry          |                                           |
-|  [x] 2-Junior         |                                           |
-|  [x] 3-Mid            |                                           |
-|  [x] 4-Senior         |                                           |
-|  [x] 5-Executive      |                                           |
-|                       |                                           |
-|  Salary Range:        |                                           |
-|  $50k - $300k slider  |                                           |
-+------------------------------------------------------------------+
++---------------------------------------------------------------------+
+|  HR Data Dashboard                                                   |
++---------------------------------------------------------------------+
+|  SIDEBAR                |  MAIN CONTENT (Tabs)                       |
+|  --------------------   |  ----------------------------------------- |
+|  Generation Settings    |  [Overview | Organization | Compensation | |
+|  Employee Count: 100    |   Performance | Attrition | Map]           |
+|  Years of History: 5    |                                            |
+|                         |  [Tab Content Area]                        |
+|  Attrition Settings     |                                            |
+|  [x] Enable Attrition   |                                            |
+|  Attrition Rate: 12%    |                                            |
+|  ML Difficulty: 0.2     |                                            |
+|                         |                                            |
+|  [Regenerate Data]      |                                            |
+|  --------------------   |                                            |
+|  View Filters           |                                            |
+|  Business Unit: [x] All |                                            |
+|  Country: [x] All       |                                            |
+|  Seniority: [x] All     |                                            |
+|  Salary Range: slider   |                                            |
+|  --------------------   |                                            |
+|  Data Summary           |                                            |
+|  Total Employees: 100   |                                            |
+|  Avg Salary: $85,000    |                                            |
++---------------------------------------------------------------------+
 ```
 
 ## Filters
 
+### Generation Settings
+
+| Setting | Description | Type |
+|---------|-------------|------|
+| Employee Count | Number of employees to generate (10-10,000) | Slider |
+| Years of History | Years of historical data to generate (1-20) | Slider |
+| Enable Attrition | Generate employee termination data | Checkbox |
+| Attrition Rate | Base annual attrition rate (0-30%) | Slider |
+| ML Difficulty | Noise level for ML prediction difficulty | Slider |
+
+### View Filters
+
 | Filter | Description | Type |
 |--------|-------------|------|
-| Employee Count | Number of employees to generate (10-500) | Slider |
 | Business Unit | Engineering, Sales, Corporate | Multi-select |
+| Country | Filter by employee location country | Multi-select |
 | Seniority Level | 1 (Entry) through 5 (Executive) | Multi-select |
 | Salary Range | Min/max annual salary filter | Range slider |
 
@@ -121,13 +143,14 @@ hr-data-dashboard/
 │       ├── app.py                 # Main Streamlit entry point
 │       ├── data_manager.py        # Data generation and caching
 │       ├── filters.py             # Sidebar filter components
-│       ├── pages/
+│       ├── views/
 │       │   ├── __init__.py
 │       │   ├── overview.py        # Summary metrics/KPIs
 │       │   ├── org_chart.py       # Org hierarchy treemap
 │       │   ├── org_network.py     # NetworkX + Pyvis graph
 │       │   ├── compensation.py    # Salary analytics
 │       │   ├── performance.py     # Performance dashboards
+│       │   ├── attrition.py       # Attrition analytics & ML insights
 │       │   └── geography.py       # Pydeck interactive map
 │       └── utils/
 │           ├── __init__.py
