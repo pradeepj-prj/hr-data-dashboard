@@ -117,19 +117,19 @@ def render_rating_distribution(perf_df: pd.DataFrame) -> None:
 
 def render_rating_trend(perf_df: pd.DataFrame) -> None:
     """Render average rating trend over years."""
-    if "review_year" not in perf_df.columns:
+    if "review_period_year" not in perf_df.columns:
         st.info("Review year data not available")
         return
 
     yearly_avg = (
-        perf_df.groupby("review_year")["rating"]
+        perf_df.groupby("review_period_year")["rating"]
         .mean()
         .reset_index()
     )
 
     fig = create_line_chart(
         yearly_avg,
-        x="review_year",
+        x="review_period_year",
         y="rating",
         title="Average Rating Trend by Year",
     )
@@ -140,13 +140,13 @@ def render_rating_trend(perf_df: pd.DataFrame) -> None:
 
 def render_ratings_by_year_stacked(perf_df: pd.DataFrame) -> None:
     """Render stacked bar chart of ratings by year."""
-    if "review_year" not in perf_df.columns:
+    if "review_period_year" not in perf_df.columns:
         st.info("Review year data not available")
         return
 
     # Count ratings by year
     rating_by_year = (
-        perf_df.groupby(["review_year", "rating"])
+        perf_df.groupby(["review_period_year", "rating"])
         .size()
         .reset_index(name="count")
     )
@@ -162,7 +162,7 @@ def render_ratings_by_year_stacked(perf_df: pd.DataFrame) -> None:
 
     fig = px.bar(
         rating_by_year,
-        x="review_year",
+        x="review_period_year",
         y="count",
         color="rating",
         title="Rating Distribution by Year",
@@ -180,7 +180,7 @@ def render_ratings_by_year_stacked(perf_df: pd.DataFrame) -> None:
 
 def render_bu_year_heatmap(perf_enriched: pd.DataFrame) -> None:
     """Render heatmap of average rating by business unit and year."""
-    if "review_year" not in perf_enriched.columns or "business_unit" not in perf_enriched.columns:
+    if "review_period_year" not in perf_enriched.columns or "business_unit" not in perf_enriched.columns:
         st.info("Business unit or review year data not available")
         return
 
@@ -193,7 +193,7 @@ def render_bu_year_heatmap(perf_enriched: pd.DataFrame) -> None:
 
     fig = create_heatmap(
         df,
-        x="review_year",
+        x="review_period_year",
         y="business_unit",
         z="rating",
         title="Avg Rating: Business Unit × Year",
