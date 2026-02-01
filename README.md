@@ -8,14 +8,18 @@ Interactive Streamlit dashboard for exploring and visualizing synthetic HR data 
 - **Organization Views**: Interactive treemap and network graph showing manager hierarchy
 - **Compensation Analytics**: Salary distribution, box plots by seniority/business unit, change reason breakdown
 - **Performance Analytics**: Rating distribution, trends over time, heatmaps by business unit
-- **Attrition Analytics**: Turnover metrics, attrition by department/tenure/performance, ML feature importance for predicting employee churn
+- **Workforce Dynamics**: Hires vs attrition analysis, headcount trends, new hire demographics (when hiring enabled)
+- **Attrition Analytics**: Turnover metrics, attrition by department/tenure/performance, termination reasons
 - **Geographic Map**: Interactive Pydeck map showing employee distribution by location
+- **Data Tables**: Raw data inspection with search, column info, and statistics
 
 ### Sidebar Controls
 
 - **Generation Settings**: Configure employee count (10-10,000), years of history (1-20), attrition rate, and ML difficulty noise
+- **Hiring Simulation**: Enable workforce growth with configurable growth rate and backfill rate
 - **View Filters**: Filter dashboard by business unit, country, seniority level, and salary range
-- **Data Export**: Download all tables as CSV files
+- **Data Health**: Automated validation checks for data quality
+- **Data Export**: Download all tables as CSV or Parquet (ZIP bundle available)
 
 ## Installation
 
@@ -60,32 +64,46 @@ The dashboard will open in your browser at `http://localhost:8501`.
 ## Dashboard Layout
 
 ```
-+---------------------------------------------------------------------+
-|  HR Data Dashboard                                                   |
-+---------------------------------------------------------------------+
-|  SIDEBAR                |  MAIN CONTENT (Tabs)                       |
-|  --------------------   |  ----------------------------------------- |
-|  Generation Settings    |  [Overview | Organization | Compensation | |
-|  Employee Count: 100    |   Performance | Attrition | Map]           |
-|  Years of History: 5    |                                            |
-|                         |  [Tab Content Area]                        |
-|  Attrition Settings     |                                            |
-|  [x] Enable Attrition   |                                            |
-|  Attrition Rate: 12%    |                                            |
-|  ML Difficulty: 0.2     |                                            |
-|                         |                                            |
-|  [Regenerate Data]      |                                            |
-|  --------------------   |                                            |
-|  View Filters           |                                            |
-|  Business Unit: [x] All |                                            |
-|  Country: [x] All       |                                            |
-|  Seniority: [x] All     |                                            |
-|  Salary Range: slider   |                                            |
-|  --------------------   |                                            |
-|  Data Summary           |                                            |
-|  Total Employees: 100   |                                            |
-|  Avg Salary: $85,000    |                                            |
-+---------------------------------------------------------------------+
++-------------------------------------------------------------------------+
+|  HR Data Dashboard                                                       |
++-------------------------------------------------------------------------+
+|  SIDEBAR                  |  MAIN CONTENT (Tabs)                         |
+|  ----------------------   |  ------------------------------------------- |
+|  Generation Settings      |  [Overview | Organization | Compensation |   |
+|  Employee Count: 100      |   Performance | Workforce Dynamics | Map |   |
+|  Years of History: 5      |   Data Tables]                               |
+|                           |                                              |
+|  Attrition Settings       |  [Tab Content Area]                          |
+|  [x] Enable Attrition     |                                              |
+|  Attrition Rate: 12%      |  When "Workforce Dynamics" selected:         |
+|  ML Difficulty: 0.2       |  - KPIs: Hires, Attrition, Net Change        |
+|                           |  - Hires vs Attrition bar chart              |
+|  Hiring Simulation        |  - Headcount trend line                      |
+|  [x] Enable Hiring        |  - New hire demographics                     |
+|  Growth Rate: 5%          |                                              |
+|  Backfill Rate: 85%       |                                              |
+|                           |                                              |
+|  [Regenerate Data]        |                                              |
+|  ----------------------   |                                              |
+|  View Filters             |                                              |
+|  Business Unit: [x] All   |                                              |
+|  Country: [x] All         |                                              |
+|  Seniority: [x] All       |                                              |
+|  Salary Range: slider     |                                              |
+|  ----------------------   |                                              |
+|  Data Summary             |                                              |
+|  Total Employees: 100     |                                              |
+|  Avg Salary: $85,000      |                                              |
+|  ----------------------   |                                              |
+|  Data Health              |                                              |
+|  ✓ Headcount Trend        |                                              |
+|  ✓ Attrition Rate         |                                              |
+|  ✓ Seniority Pyramid      |                                              |
+|  ----------------------   |                                              |
+|  Export Data              |                                              |
+|  Format: (•) Parquet      |                                              |
+|  [Download All (ZIP)]     |                                              |
++-------------------------------------------------------------------------+
 ```
 
 ## Filters
@@ -100,6 +118,14 @@ The dashboard will open in your browser at `http://localhost:8501`.
 | Attrition Rate | Base annual attrition rate (0-30%) | Slider |
 | ML Difficulty | Noise level for ML prediction difficulty | Slider |
 
+### Hiring Simulation
+
+| Setting | Description | Type |
+|---------|-------------|------|
+| Enable Hiring | Generate new hires each year | Checkbox |
+| Growth Rate | Base annual workforce growth rate (0-15%) | Slider |
+| Backfill Rate | Percentage of departures to replace (0-100%) | Slider |
+
 ### View Filters
 
 | Filter | Description | Type |
@@ -109,17 +135,40 @@ The dashboard will open in your browser at `http://localhost:8501`.
 | Seniority Level | 1 (Entry) through 5 (Executive) | Multi-select |
 | Salary Range | Min/max annual salary filter | Range slider |
 
+## Data Health Checks
+
+The sidebar displays automated validation checks:
+
+| Check | Pass Criteria |
+|-------|---------------|
+| Headcount Trend | Never goes negative |
+| Attrition Rate | Between 5-30% annually |
+| BU Distribution | All business units have >5% |
+| Seniority Pyramid | More junior than senior employees |
+| Tenure Mix | Has both new (<2yr) and tenured (>5yr) |
+| New Hire Seniority | >50% of new hires are L1-L2 (when hiring enabled) |
+
 ## Data Export
 
-The sidebar includes download buttons for exporting all data tables as CSV files:
-- employee.csv
-- employee_job_assignment.csv
-- employee_org_assignment.csv
-- employee_compensation.csv
-- employee_performance.csv
-- organization_unit.csv
-- job_role.csv
-- location.csv
+Export options in the sidebar:
+
+### Format Toggle
+- **CSV**: Standard comma-separated values
+- **Parquet** (Recommended): Columnar format, ~50% smaller, faster for HANA Cloud
+
+### Download Options
+- **Download All (ZIP)**: Single ZIP file with all tables
+- **Individual Tables**: Expandable section for per-table downloads
+
+### Available Tables
+- employee
+- employee_job_assignment
+- employee_org_assignment
+- employee_compensation
+- employee_performance
+- organization_unit
+- job_role
+- location
 
 ## Development
 
@@ -150,11 +199,14 @@ hr-data-dashboard/
 │       │   ├── org_network.py     # NetworkX + Pyvis graph
 │       │   ├── compensation.py    # Salary analytics
 │       │   ├── performance.py     # Performance dashboards
-│       │   ├── attrition.py       # Attrition analytics & ML insights
-│       │   └── geography.py       # Pydeck interactive map
+│       │   ├── attrition.py       # Workforce dynamics & attrition
+│       │   ├── geography.py       # Pydeck interactive map
+│       │   └── data_tables.py     # Raw data inspection
 │       └── utils/
 │           ├── __init__.py
-│           └── chart_helpers.py   # Plotly chart utilities
+│           ├── chart_helpers.py   # Plotly chart utilities
+│           ├── data_health.py     # Validation check functions
+│           └── export.py          # Parquet/CSV export utilities
 └── tests/
     └── test_data_manager.py
 ```
@@ -169,6 +221,7 @@ hr-data-dashboard/
 - networkx >= 3.0
 - pyvis >= 0.3.2
 - pydeck >= 0.8.0
+- pyarrow >= 14.0.0
 
 ## License
 
