@@ -15,6 +15,9 @@ def get_hr_data(
     noise_std: float = 0.2,
     start_date: date | None = None,
     end_date: date | None = None,
+    include_hiring: bool = False,
+    base_growth_rate: float = 0.05,
+    backfill_rate: float = 0.85,
 ) -> dict[str, pd.DataFrame]:
     """
     Generate or retrieve cached HR data.
@@ -30,6 +33,9 @@ def get_hr_data(
         noise_std: ML difficulty noise level (0.0-0.5)
         start_date: Start date for historical data generation
         end_date: End date for historical data generation
+        include_hiring: Whether to enable hiring simulation
+        base_growth_rate: Base annual growth rate (0.0-0.15)
+        backfill_rate: Fraction of departures to backfill (0.0-1.0)
 
     Returns:
         Dictionary of DataFrames from hr_data_generator
@@ -42,6 +48,9 @@ def get_hr_data(
     noise_key = "hr_data_noise_std"
     start_date_key = "hr_data_start_date"
     end_date_key = "hr_data_end_date"
+    hiring_key = "hr_data_include_hiring"
+    growth_rate_key = "hr_data_growth_rate"
+    backfill_rate_key = "hr_data_backfill_rate"
 
     # Check if we need to regenerate
     needs_regeneration = (
@@ -53,6 +62,9 @@ def get_hr_data(
         or st.session_state.get(noise_key) != noise_std
         or st.session_state.get(start_date_key) != start_date
         or st.session_state.get(end_date_key) != end_date
+        or st.session_state.get(hiring_key) != include_hiring
+        or st.session_state.get(growth_rate_key) != base_growth_rate
+        or st.session_state.get(backfill_rate_key) != backfill_rate
     )
 
     if needs_regeneration:
@@ -65,6 +77,9 @@ def get_hr_data(
                 noise_std=noise_std,
                 start_date=start_date,
                 end_date=end_date,
+                include_hiring=include_hiring,
+                base_growth_rate=base_growth_rate,
+                backfill_rate=backfill_rate,
             )
             st.session_state[cache_key] = data
             st.session_state[count_key] = n_employees
@@ -74,6 +89,9 @@ def get_hr_data(
             st.session_state[noise_key] = noise_std
             st.session_state[start_date_key] = start_date
             st.session_state[end_date_key] = end_date
+            st.session_state[hiring_key] = include_hiring
+            st.session_state[growth_rate_key] = base_growth_rate
+            st.session_state[backfill_rate_key] = backfill_rate
 
     return st.session_state[cache_key]
 
@@ -86,6 +104,9 @@ def force_regenerate(
     noise_std: float = 0.2,
     start_date: date | None = None,
     end_date: date | None = None,
+    include_hiring: bool = False,
+    base_growth_rate: float = 0.05,
+    backfill_rate: float = 0.85,
 ) -> dict[str, pd.DataFrame]:
     """
     Force regeneration of HR data with a new seed.
@@ -98,6 +119,9 @@ def force_regenerate(
         noise_std: ML difficulty noise level (0.0-0.5)
         start_date: Start date for historical data generation
         end_date: End date for historical data generation
+        include_hiring: Whether to enable hiring simulation
+        base_growth_rate: Base annual growth rate (0.0-0.15)
+        backfill_rate: Fraction of departures to backfill (0.0-1.0)
 
     Returns:
         Dictionary of DataFrames from hr_data_generator
@@ -112,6 +136,9 @@ def force_regenerate(
         "hr_data_noise_std",
         "hr_data_start_date",
         "hr_data_end_date",
+        "hr_data_include_hiring",
+        "hr_data_growth_rate",
+        "hr_data_backfill_rate",
     ]
     for key in keys_to_clear:
         if key in st.session_state:
@@ -125,6 +152,9 @@ def force_regenerate(
         noise_std=noise_std,
         start_date=start_date,
         end_date=end_date,
+        include_hiring=include_hiring,
+        base_growth_rate=base_growth_rate,
+        backfill_rate=backfill_rate,
     )
 
 

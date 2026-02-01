@@ -9,8 +9,9 @@ from hr_dashboard.filters import (
     render_sidebar_filters,
     render_data_summary,
     render_download_buttons,
+    render_health_panel,
 )
-from hr_dashboard.views import overview, compensation, performance, org_chart, org_network, geography, attrition
+from hr_dashboard.views import overview, compensation, performance, org_chart, org_network, geography, attrition, data_tables
 
 
 def main():
@@ -49,6 +50,9 @@ def main():
     st.session_state["attrition_rate_pct"] = filters["attrition_rate"]
     st.session_state["noise_std"] = filters["noise_std"]
     st.session_state["years_of_history"] = filters["years_of_history"]
+    st.session_state["enable_hiring"] = filters["enable_hiring"]
+    st.session_state["growth_rate_pct"] = filters["growth_rate"]
+    st.session_state["backfill_rate_pct"] = filters["backfill_rate"]
 
     # Recalculate date range based on filter value
     years = filters["years_of_history"]
@@ -65,6 +69,9 @@ def main():
             noise_std=filters["noise_std"],
             start_date=start_date,
             end_date=end_date,
+            include_hiring=filters["enable_hiring"],
+            base_growth_rate=filters["growth_rate"] / 100,
+            backfill_rate=filters["backfill_rate"] / 100,
         )
     elif filters["regenerate"]:
         data = force_regenerate(
@@ -74,6 +81,9 @@ def main():
             noise_std=filters["noise_std"],
             start_date=start_date,
             end_date=end_date,
+            include_hiring=filters["enable_hiring"],
+            base_growth_rate=filters["growth_rate"] / 100,
+            backfill_rate=filters["backfill_rate"] / 100,
         )
         st.rerun()
     else:
@@ -83,12 +93,18 @@ def main():
         current_noise = st.session_state.get("hr_data_noise_std")
         current_start_date = st.session_state.get("hr_data_start_date")
         current_end_date = st.session_state.get("hr_data_end_date")
+        current_hiring = st.session_state.get("hr_data_include_hiring")
+        current_growth = st.session_state.get("hr_data_growth_rate")
+        current_backfill = st.session_state.get("hr_data_backfill_rate")
 
         if (current_attrition != filters["enable_attrition"] or
             current_rate != filters["attrition_rate"] / 100 or
             current_noise != filters["noise_std"] or
             current_start_date != start_date or
-            current_end_date != end_date):
+            current_end_date != end_date or
+            current_hiring != filters["enable_hiring"] or
+            current_growth != filters["growth_rate"] / 100 or
+            current_backfill != filters["backfill_rate"] / 100):
             data = get_hr_data(
                 filters["n_employees"],
                 include_attrition=filters["enable_attrition"],
@@ -96,6 +112,9 @@ def main():
                 noise_std=filters["noise_std"],
                 start_date=start_date,
                 end_date=end_date,
+                include_hiring=filters["enable_hiring"],
+                base_growth_rate=filters["growth_rate"] / 100,
+                backfill_rate=filters["backfill_rate"] / 100,
             )
         else:
             data = initial_data
@@ -112,17 +131,26 @@ def main():
     # Render data summary
     render_data_summary(filtered_data)
 
+    # Render health panel
+    render_health_panel(
+        filtered_data,
+        start_year=start_date.year,
+        end_year=end_date.year,
+        include_hiring=filters["enable_hiring"],
+    )
+
     # Render download buttons
     render_download_buttons(filtered_data)
 
     # Main content tabs
-    tab_overview, tab_org, tab_compensation, tab_performance, tab_attrition, tab_map = st.tabs([
+    tab_overview, tab_org, tab_compensation, tab_performance, tab_attrition, tab_map, tab_data = st.tabs([
         "Overview",
         "Organization",
         "Compensation",
         "Performance",
-        "Attrition",
+        "Workforce Dynamics" if filters["enable_hiring"] else "Attrition",
         "Map",
+        "📋 Data Tables",
     ])
 
     with tab_overview:
@@ -142,10 +170,18 @@ def main():
         performance.render(filtered_data)
 
     with tab_attrition:
-        attrition.render(filtered_data)
+        attrition.render(
+            filtered_data,
+            include_hiring=filters["enable_hiring"],
+            start_year=start_date.year,
+            end_year=end_date.year,
+        )
 
     with tab_map:
         geography.render(filtered_data)
+
+    with tab_data:
+        data_tables.render(filtered_data)
 
 
 if __name__ == "__main__":
