@@ -4,7 +4,7 @@ from datetime import date
 
 import streamlit as st
 import pandas as pd
-from hr_data_generator import generate_hr_data
+from hr_data_generator import ProgressInfo, generate_hr_data
 
 
 def get_hr_data(
@@ -68,7 +68,15 @@ def get_hr_data(
     )
 
     if needs_regeneration:
-        with st.spinner(f"Generating data for {n_employees} employees..."):
+        with st.status("Generating HR data...", expanded=True) as status:
+            progress_bar = st.progress(0.0)
+            status_text = st.empty()
+
+            def on_progress(info: ProgressInfo) -> None:
+                """Update Streamlit progress UI with generation progress."""
+                progress_bar.progress(min(info.progress, 1.0))
+                status_text.text(info.message)
+
             data = generate_hr_data(
                 n_employees=n_employees,
                 seed=seed,
@@ -80,7 +88,11 @@ def get_hr_data(
                 include_hiring=include_hiring,
                 base_growth_rate=base_growth_rate,
                 backfill_rate=backfill_rate,
+                progress_callback=on_progress,
             )
+            progress_bar.progress(1.0)
+            status.update(label="Data generation complete!", state="complete")
+
             st.session_state[cache_key] = data
             st.session_state[count_key] = n_employees
             st.session_state[seed_key] = seed

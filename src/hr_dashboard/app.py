@@ -25,27 +25,49 @@ def main():
 
     st.title("HR Data Dashboard")
 
-    # Initialize session state for employee count and years of history
+    # Initialize session state with defaults for pending settings
+    # These are the settings shown in the UI, not necessarily what data was generated with
     if "n_employees" not in st.session_state:
         st.session_state["n_employees"] = 100
     if "years_of_history" not in st.session_state:
         st.session_state["years_of_history"] = 5
+    if "enable_attrition" not in st.session_state:
+        st.session_state["enable_attrition"] = True
+    if "attrition_rate_pct" not in st.session_state:
+        st.session_state["attrition_rate_pct"] = 12
+    if "noise_std" not in st.session_state:
+        st.session_state["noise_std"] = 0.2
+    if "enable_hiring" not in st.session_state:
+        st.session_state["enable_hiring"] = False
+    if "growth_rate_pct" not in st.session_state:
+        st.session_state["growth_rate_pct"] = 5
+    if "backfill_rate_pct" not in st.session_state:
+        st.session_state["backfill_rate_pct"] = 85
 
-    # Calculate date range from years of history
-    end_date = date.today()
-    start_date = date(end_date.year - st.session_state["years_of_history"], 1, 1)
+    # Generate initial data if not cached (first load only)
+    # Uses current session state values as defaults
+    if "hr_data" not in st.session_state:
+        end_date = date.today()
+        start_date = date(end_date.year - st.session_state["years_of_history"], 1, 1)
+        data = get_hr_data(
+            st.session_state["n_employees"],
+            include_attrition=st.session_state["enable_attrition"],
+            attrition_rate=st.session_state["attrition_rate_pct"] / 100,
+            noise_std=st.session_state["noise_std"],
+            start_date=start_date,
+            end_date=end_date,
+            include_hiring=st.session_state["enable_hiring"],
+            base_growth_rate=st.session_state["growth_rate_pct"] / 100,
+            backfill_rate=st.session_state["backfill_rate_pct"] / 100,
+        )
+    else:
+        data = st.session_state["hr_data"]
 
-    # Initial data generation (needed for filters)
-    initial_data = get_hr_data(
-        st.session_state["n_employees"],
-        start_date=start_date,
-        end_date=end_date,
-    )
+    # Render sidebar filters (uses cached data for filter options)
+    filters = render_sidebar_filters(data)
 
-    # Render sidebar filters
-    filters = render_sidebar_filters(initial_data)
-
-    # Store settings in session state
+    # Update pending settings in session state (but don't regenerate yet)
+    st.session_state["n_employees"] = filters["n_employees"]
     st.session_state["enable_attrition"] = filters["enable_attrition"]
     st.session_state["attrition_rate_pct"] = filters["attrition_rate"]
     st.session_state["noise_std"] = filters["noise_std"]
@@ -54,26 +76,11 @@ def main():
     st.session_state["growth_rate_pct"] = filters["growth_rate"]
     st.session_state["backfill_rate_pct"] = filters["backfill_rate"]
 
-    # Recalculate date range based on filter value
-    years = filters["years_of_history"]
-    end_date = date.today()
-    start_date = date(end_date.year - years, 1, 1)
-
-    # Handle employee count change or regeneration
-    if filters["n_employees"] != st.session_state["n_employees"]:
-        st.session_state["n_employees"] = filters["n_employees"]
-        data = get_hr_data(
-            filters["n_employees"],
-            include_attrition=filters["enable_attrition"],
-            attrition_rate=filters["attrition_rate"] / 100,
-            noise_std=filters["noise_std"],
-            start_date=start_date,
-            end_date=end_date,
-            include_hiring=filters["enable_hiring"],
-            base_growth_rate=filters["growth_rate"] / 100,
-            backfill_rate=filters["backfill_rate"] / 100,
-        )
-    elif filters["regenerate"]:
+    # Only regenerate when user explicitly clicks "Regenerate Data" button
+    if filters["regenerate"]:
+        years = filters["years_of_history"]
+        end_date = date.today()
+        start_date = date(end_date.year - years, 1, 1)
         data = force_regenerate(
             filters["n_employees"],
             include_attrition=filters["enable_attrition"],
@@ -86,38 +93,12 @@ def main():
             backfill_rate=filters["backfill_rate"] / 100,
         )
         st.rerun()
-    else:
-        # Check if settings changed
-        current_attrition = st.session_state.get("hr_data_include_attrition")
-        current_rate = st.session_state.get("hr_data_attrition_rate")
-        current_noise = st.session_state.get("hr_data_noise_std")
-        current_start_date = st.session_state.get("hr_data_start_date")
-        current_end_date = st.session_state.get("hr_data_end_date")
-        current_hiring = st.session_state.get("hr_data_include_hiring")
-        current_growth = st.session_state.get("hr_data_growth_rate")
-        current_backfill = st.session_state.get("hr_data_backfill_rate")
 
-        if (current_attrition != filters["enable_attrition"] or
-            current_rate != filters["attrition_rate"] / 100 or
-            current_noise != filters["noise_std"] or
-            current_start_date != start_date or
-            current_end_date != end_date or
-            current_hiring != filters["enable_hiring"] or
-            current_growth != filters["growth_rate"] / 100 or
-            current_backfill != filters["backfill_rate"] / 100):
-            data = get_hr_data(
-                filters["n_employees"],
-                include_attrition=filters["enable_attrition"],
-                attrition_rate=filters["attrition_rate"] / 100,
-                noise_std=filters["noise_std"],
-                start_date=start_date,
-                end_date=end_date,
-                include_hiring=filters["enable_hiring"],
-                base_growth_rate=filters["growth_rate"] / 100,
-                backfill_rate=filters["backfill_rate"] / 100,
-            )
-        else:
-            data = initial_data
+    # Get the actual generation parameters from the cached data
+    # (stored in session state by data_manager when data was generated)
+    start_date = st.session_state.get("hr_data_start_date", date.today().replace(month=1, day=1))
+    end_date = st.session_state.get("hr_data_end_date", date.today())
+    data_include_hiring = st.session_state.get("hr_data_include_hiring", False)
 
     # Apply filters
     filtered_data = get_filtered_data(
@@ -131,24 +112,24 @@ def main():
     # Render data summary
     render_data_summary(filtered_data)
 
-    # Render health panel
+    # Render health panel (uses actual data generation params, not pending settings)
     render_health_panel(
         filtered_data,
         start_year=start_date.year,
         end_year=end_date.year,
-        include_hiring=filters["enable_hiring"],
+        include_hiring=data_include_hiring,
     )
 
     # Render download buttons
     render_download_buttons(filtered_data)
 
-    # Main content tabs
+    # Main content tabs (tab label reflects actual data, not pending settings)
     tab_overview, tab_org, tab_compensation, tab_performance, tab_attrition, tab_map, tab_data = st.tabs([
         "Overview",
         "Organization",
         "Compensation",
         "Performance",
-        "Workforce Dynamics" if filters["enable_hiring"] else "Attrition",
+        "Workforce Dynamics" if data_include_hiring else "Attrition",
         "Map",
         "📋 Data Tables",
     ])
@@ -172,7 +153,7 @@ def main():
     with tab_attrition:
         attrition.render(
             filtered_data,
-            include_hiring=filters["enable_hiring"],
+            include_hiring=data_include_hiring,
             start_year=start_date.year,
             end_year=end_date.year,
         )

@@ -106,12 +106,24 @@ def render_sidebar_filters(data: dict[str, pd.DataFrame]) -> dict[str, Any]:
         filters["growth_rate"] = 5
         filters["backfill_rate"] = 85
 
-    # Regenerate button
-    filters["regenerate"] = st.sidebar.button(
-        "Regenerate Data",
-        help="Generate new random data",
-        use_container_width=True,
-    )
+    # Check if generation settings differ from last generated data
+    settings_changed = _check_settings_changed(filters)
+
+    # Regenerate button with visual indicator when settings changed
+    if settings_changed:
+        st.sidebar.warning("Settings changed - click to apply", icon="⚠️")
+        filters["regenerate"] = st.sidebar.button(
+            "🔄 Regenerate Data",
+            help="Apply new settings and generate fresh data",
+            use_container_width=True,
+            type="primary",
+        )
+    else:
+        filters["regenerate"] = st.sidebar.button(
+            "Regenerate Data",
+            help="Generate new random data with same settings",
+            use_container_width=True,
+        )
 
     st.sidebar.divider()
     st.sidebar.header("View Filters")
@@ -178,6 +190,46 @@ def render_sidebar_filters(data: dict[str, pd.DataFrame]) -> dict[str, Any]:
         filters["salary_range"] = None
 
     return filters
+
+
+def _check_settings_changed(filters: dict[str, Any]) -> bool:
+    """
+    Check if current filter settings differ from the last generated data.
+
+    Compares pending settings in filters against hr_data_* session state keys
+    that were set when data was actually generated.
+
+    Args:
+        filters: Current filter values from sidebar
+
+    Returns:
+        True if settings have changed and data needs regeneration
+    """
+    from datetime import date
+
+    # If no data has been generated yet, no changes to detect
+    if "hr_data" not in st.session_state:
+        return False
+
+    # Calculate date range from filter's years_of_history
+    years = filters["years_of_history"]
+    end_date = date.today()
+    start_date = date(end_date.year - years, 1, 1)
+
+    # Compare each setting against what data was generated with
+    checks = [
+        st.session_state.get("hr_data_n_employees") != filters["n_employees"],
+        st.session_state.get("hr_data_include_attrition") != filters["enable_attrition"],
+        st.session_state.get("hr_data_attrition_rate") != filters["attrition_rate"] / 100,
+        st.session_state.get("hr_data_noise_std") != filters["noise_std"],
+        st.session_state.get("hr_data_start_date") != start_date,
+        st.session_state.get("hr_data_end_date") != end_date,
+        st.session_state.get("hr_data_include_hiring") != filters["enable_hiring"],
+        st.session_state.get("hr_data_growth_rate") != filters["growth_rate"] / 100,
+        st.session_state.get("hr_data_backfill_rate") != filters["backfill_rate"] / 100,
+    ]
+
+    return any(checks)
 
 
 def render_data_summary(data: dict[str, pd.DataFrame]) -> None:
